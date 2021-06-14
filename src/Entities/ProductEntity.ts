@@ -7,7 +7,6 @@ class Product extends Entity {
   brand: String;
   stock: Number;
   is_visible: Boolean;
-
 }
 
 export default Product;
