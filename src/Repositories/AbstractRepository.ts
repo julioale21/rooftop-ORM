@@ -1,29 +1,57 @@
 import Entity from "../Entities/Entity";
-import * as fs from "fs";
-import * as path from "path";
-import Product from "../Entities/ProductEntity";
+import { writeFileSync } from "fs";
+import { resolve } from "path";
 
 abstract class AbstractRepository {
   protected table: string;
+  protected data : Array<Entity> = [];
 
-  protected readTable(table: string) : string {
-    const data = fs.readFileSync(path.resolve(__dirname, `../../${table}`), { encoding: "utf-8"});
-    return data;
+  private saveData() {
+    let content = JSON.stringify(this.data);
+    writeFileSync(resolve(__dirname, "../../" + this.table), content);
+  }
+
+  public findAll() : Entity[] {
+    return this.data;
   };
 
-  protected writeTable(table: string, data: string) : void {
-    fs.writeFileSync(path.resolve(__dirname, `../../${table}`), data);
+  public findById(id: Number) : Entity {
+    return this.data.find(function(obj) {
+      return obj.getId() == id
+    });
   };
 
-  abstract findAll() : Entity[];
+  public create(entity: Entity) : Entity {
+    entity.setId(Date.now());
+    this.data = [...this.data, entity];
+    this.saveData();
+    return entity
+  };
 
-  abstract findById(id: Number) : Entity;
+  public update(entity: Entity) : Boolean {
+    if (!entity.getId()) {
+      this.create(entity);
+    }
 
-  abstract create(entity: Entity) : Entity;
+    this.data = this.data.map(function(obj) {
+      if (obj.getId() == entity.getId()) {
+        return entity;
+      } 
+      return obj;
+    });
 
-  abstract update(id: Number, changes: Object) : Boolean;
+    return true;
+  };
 
-  abstract delete(id: Number) : Boolean;
+  public delete(id: Number) : Boolean {
+    let count = this.data.length;
+
+    this.data = this.data.filter(function(obj) {
+      return obj.getId() != id;
+    });
+
+    return this.data.length < count;
+  };
 }
 
 export default AbstractRepository;
